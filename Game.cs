@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using Silk.NET.SDL;
+using Silk.NET.Maths;
 
 namespace TheAdventure;
 
@@ -9,6 +10,7 @@ public class Game
     private Sdl _sdl;
     private IntPtr _window;
     private IntPtr _renderer;
+    private int windowWidth = 800,windowHeight = 700;
 
     private bool _quit = false;
 
@@ -17,9 +19,31 @@ public class Game
 
     private Event _event;
 
+    private Player _player;
+    private Ground _groundTop,_groundBottom;
+    private List<Coin> _coins = new List<Coin>();
+
+
+    private InputManager _input;
+
+
+
     public Game()
     {
         _sdl = new Sdl(new SdlContext());
+        _input = new InputManager(_sdl);
+
+        _groundTop = new Ground(0, 0, windowWidth, 50);
+        _groundBottom = new Ground(0, windowHeight-50, windowWidth, 50);
+
+        _player = new Player(100,200);
+        _player.SetWorldBounds(0,windowWidth/2,(float)50, (float)windowHeight-50);
+
+        _coins.Add(new Coin(50, 70));
+        _coins.Add(new Coin(500, 70));
+        _coins.Add(new Coin(400, 70));
+        _coins.Add(new Coin(650, 70));
+        _coins.Add(new Coin(750, 70));
     }
 
     public void Run()
@@ -28,7 +52,7 @@ public class Game
 
         while (!_quit)
         {
-            HandleEvents();
+            _input.ProcessEvents();
             Update();
             Render();
         }
@@ -45,8 +69,8 @@ public class Game
             "The Adventure",
             Sdl.WindowposUndefined,
             Sdl.WindowposUndefined,
-            800,
-            800,
+            windowWidth,
+            windowHeight,
             (uint)WindowFlags.Resizable
         );
 
@@ -79,14 +103,35 @@ public class Game
         }
     }
 
+    private void HandleCollisions()
+    {
+        for (int i = _coins.Count - 1; i >= 0; i--)
+        {
+            if (_player.Intersects(_coins[i]))
+            {
+                _coins[i].IsActive = false;
+            }
+        }
+
+        _coins.RemoveAll(c => !c.IsActive);
+   
+    }
+
     private void Update()
     {
         var elapsed = _timer.Elapsed;
+
         _timer.Restart();
 
-        //Main Logic of the game
+        float dt = (float)elapsed.TotalSeconds;
 
-    }
+        _player.Update(dt,_input);
+
+        foreach (var coin in _coins)
+            coin.Update(dt,_input);
+
+        HandleCollisions();
+     }
 
     private unsafe void Render()
     {
@@ -95,11 +140,17 @@ public class Game
         _sdl.SetRenderDrawColor(r, 255, 255, 255, 255);
         _sdl.RenderClear(r);
 
-        _sdl.SetRenderDrawColor(r, 255, 0, 0, 255);
-        _sdl.RenderDrawLine(r, 0, 0, 400, 400);
+
+        _player.Render(_renderer,_sdl);
+        _groundTop.Render(_renderer, _sdl);
+        _groundBottom.Render(_renderer, _sdl);
+
+        foreach (var coin in _coins)
+            coin.Render(_renderer, _sdl);
+
+
 
         _sdl.RenderPresent(r);
-
         _frames++;
     }
 
