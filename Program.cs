@@ -4,7 +4,7 @@ public static class Program
 {
     public static void Main()
     {
-        var game = new Game();
+        var game = Game.Instance;
         game.Run();
     }
 }

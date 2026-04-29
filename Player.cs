@@ -15,9 +15,11 @@ public class Player : Entity
     private WorldBounds _bounds = new WorldBounds(0,0,0,0);
 
 
-
     public Player(float x, float y) : base(x, y, 32, 64)
     {
+
+        //TextureLoader.Load()
+
     }
 
     public override void Update(float dt,InputManager input)
