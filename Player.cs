@@ -6,81 +6,165 @@ namespace TheAdventure;
 
 public class Player : Entity
 {
+    private Vector2D<float> _previousVelocity;
+    private int _width,_height;
+
     public float Speed = 200f;
 
     // true = gravity goes down, false = gravity goes up
     public bool GravityDown = true;
 
-    private float _velocityY = 0f; 
+
     private WorldBounds _bounds = new WorldBounds(0,0,0,0);
 
 
-    public Player(float x, float y) : base(x, y, 32, 64)
+    //Animations
+    private int _runTextureId;
+    private TextureData _runTextureData;
+    
+    private  int _idleTextureId;
+    private  TextureData _idleTextureData;
+    
+    private  int _fallTextureId;
+    private  TextureData _fallTextureData;
+ 
+    private  bool flipSpriteHorizontal = false;
+
+    Animation _runAnimation;    
+    Animation _idleAnimation;
+    Animation _fallAnimation;
+    Animator _animator;
+
+
+
+    public Player(float x, float y) : base(x, y)
     {
+        LoadTextures();
 
-        //TextureLoader.Load()
+        _animator = new Animator();
 
+        _idleAnimation = new Animation(
+            spriteSheetId: _idleTextureId,
+            frameWidth: 32,
+            frameHeight: 32,
+            frameCount : 11,
+            frameTime: 0.08f,
+            loop: true
+        );
+
+        _runAnimation = new Animation(
+            spriteSheetId: _runTextureId,
+            frameWidth: 32,
+            frameHeight: 32,
+            frameCount : 11,
+            frameTime: 0.08f,
+            loop: true
+        );
+
+        _fallAnimation = new Animation(
+            spriteSheetId: _fallTextureId,
+            frameWidth: 32,
+            frameHeight: 32,
+            frameCount : 1,
+            frameTime: 0.08f,
+            loop: true
+        );
+
+        _width = _height = 64;
+
+        isStatic = false;
+        hasPhysics = true;
+
+        collider = new Collider(0,0,_width,_height,ColliderType.Solid);
+
+
+        _animator.Add("idle", _idleAnimation);
+        _animator.Add("run", _runAnimation);
+        _animator.Add("fall", _fallAnimation);
+        _animator.Play("idle");
+    }
+
+    private void LoadTextures(){
+        Game g = Game.Instance;
+        _runTextureId = g.textures.LoadTexture(Path.Combine("assets/Main Characters/Ninja Frog/", "Run (32x32).png"), out _runTextureData);
+        _idleTextureId = g.textures.LoadTexture(Path.Combine("assets/Main Characters/Ninja Frog/", "Idle (32x32).png"), out _idleTextureData);
+        _fallTextureId = g.textures.LoadTexture(Path.Combine("assets/Main Characters/Ninja Frog/", "Fall (32x32).png"), out _fallTextureData);
     }
 
     public override void Update(float dt,InputManager input)
     {
-        if (input.IsKeyDown(KeyCode.Space) && _velocityY == 0)
+        //Animation
+        if(_velocity.Y != 0)
+        {
+            _animator.Play("fall");
+        }
+        else if(_previousVelocity.X != _velocity.X || _previousVelocity.Y != _velocity.Y)
+        {
+            if(_velocity.X == 0){
+                _animator.Play("idle");
+            }
+
+            if(_velocity.X != 0){
+                _animator.Play("run");
+            }
+        }
+        
+        
+        _animator.Update(dt);
+
+
+        if (input.IsKeyPressed(KeyCode.Space))
         {
             FlipGravity();
         }
 
+        _velocity.X = 0;
+
         if (input.IsKeyDown(KeyCode.A))
         {
-            X -= Speed * dt;  
+            _velocity.X = -Speed;
+            flipSpriteHorizontal = true;
         }
-
         if (input.IsKeyDown(KeyCode.D))
         {
-            X += Speed * dt;  
+            _velocity.X = Speed;
+            flipSpriteHorizontal = false;
         }
-
-        // Auto forward movement (endless runner behavior)
-        //X += Speed * dt;
 
         // Apply custom gravity
-        float gravity = GravityDown ? 5000f : -5000f;
-        _velocityY += gravity * dt;
+        float gravity = GravityDown ? 100f : -100f;
+        _velocity.Y += gravity;
 
-        Y += _velocityY * dt;
-
-        //Apply ground coolider
-        if (Y + Height > _bounds.Bottom)
-        {
-            Y = _bounds.Bottom - Height;
-            _velocityY = 0;
-        }
-        if (Y < _bounds.Top)
-        {
-            Y = _bounds.Top;
-            _velocityY = 0;
-        }
-
-        if (X < _bounds.Left)
-            X = _bounds.Left;
-
-        if (X + Width > _bounds.Right)
-            X = _bounds.Right - Width;
+        
+        _previousVelocity = _velocity;
     }
 
     public override void Render(IntPtr renderer,Sdl sdl)
     {
         unsafe
         {
+            RendererFlip flip = RendererFlip.None;
+
+            if(flipSpriteHorizontal)
+                flip |= RendererFlip.Horizontal;
+
+            if (GravityDown == false)
+                flip |= RendererFlip.Vertical;
+
+
             var r = (Renderer*)renderer;
-
-            // Set color to red
-            sdl.SetRenderDrawColor(r, 255, 0, 0, 255);
-
-            var rect = new Rectangle<int>((int)X, (int)Y, (int)Width,(int)Height);
-
-            sdl.RenderFillRect(r, ref rect);
+            Rectangle<int> dest = new Rectangle<int>((int)_position.X,(int)_position.Y,(int)_width,(int)_height); 
+            var src = _animator.GetFrame();
+            int textureId = _animator.GetTextureId();
+            Game.Instance.textures.Render(textureId,src,dest,flip);
         }
     }
+
+    public override void OnCollide(Entity other)
+    {
+
+    }
+
 
     public void SetWorldBounds(float left,float right, float top, float bottom)
     {
@@ -93,6 +177,6 @@ public class Player : Entity
         GravityDown = !GravityDown;
 
         // Reset vertical velocity to avoid unwanted bounce effect
-        _velocityY = 0;
+        _velocity.Y = 0;
     }
 }

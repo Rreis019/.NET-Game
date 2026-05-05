@@ -1,38 +1,63 @@
-using System;
+using Silk.NET.Maths;
 using Silk.NET.SDL;
 
 namespace TheAdventure;
 
 public abstract class Entity
 {
-    public float X;
-    public float Y;
+    protected Vector2D<float> _position;
+    protected Vector2D<float> _velocity;
 
-    public float Width;
-    public float Height;
+    public Collider? collider;
 
-    public bool IsActive = true;
+    public bool isActive = true;
+    public bool isStatic = false;
+    public bool hasPhysics = false;
 
-    protected Entity(float x, float y, float width, float height)
+    protected Entity(float x, float y)
     {
-        X = x;
-        Y = y;
-        Width = width;
-        Height = height;
+        _position = new Vector2D<float>(x, y);
+        _velocity = new Vector2D<float>(0, 0);
     }
 
-    // (Movement, Physic, etc.)
-    public abstract void Update(float deltaTime,InputManager input);
-
-    // Renderization
-    public abstract void Render(IntPtr renderer,Sdl sdl);
-
-    // Simple colision AABB
-    public bool Intersects(Entity other)
+    public Vector2D<float> position
     {
-        return !(X + Width < other.X ||
-                 X > other.X + other.Width ||
-                 Y + Height < other.Y ||
-                 Y > other.Y + other.Height);
+        get => _position;
+        set => _position = value;
     }
+
+    public float X
+    {
+        get => _position.X;
+        set => _position.X = value;
+    }
+
+    public float Y
+    {
+        get => _position.Y;
+        set => _position.Y = value;
+    }
+
+    public Vector2D<float> velocity => _velocity;
+
+    protected void SetVelocity(Vector2D<float> v)
+    {
+        _velocity = v;
+    }
+
+    public void SetVelocityX(float x)
+    {
+        _velocity.X = x;
+    }
+
+    public void SetVelocityY(float y)
+    {
+        _velocity.Y = y;
+    }
+
+    public abstract void Update(float deltaTime, InputManager input);
+    
+    public abstract void Render(IntPtr renderer, Sdl sdl);
+
+    public virtual void OnCollide(Entity other) { }
 }
