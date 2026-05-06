@@ -9,7 +9,7 @@ public class Player : Entity
     private Vector2D<float> _previousVelocity;
     private int _width,_height;
 
-    public float Speed = 200f;
+    public float Speed = 100f;
 
     // true = gravity goes down, false = gravity goes up
     public bool GravityDown = true;
@@ -70,7 +70,7 @@ public class Player : Entity
             loop: true
         );
 
-        _width = _height = 64;
+        _width = _height = 32;
 
         isStatic = false;
         hasPhysics = true;
@@ -132,7 +132,7 @@ public class Player : Entity
         }
 
         // Apply custom gravity
-        float gravity = GravityDown ? 100f : -100f;
+        float gravity = GravityDown ? 50f : -50f;
         _velocity.Y += gravity;
 
         

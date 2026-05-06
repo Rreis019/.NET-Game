@@ -45,8 +45,8 @@ namespace TheAdventure
                     Collectible apple = new Collectible(
                         x,
                         y,
-                        48,
-                        48,
+                        32,
+                        32,
                         appleTextureId,
                         idleAnimation,
                         1 // value / score

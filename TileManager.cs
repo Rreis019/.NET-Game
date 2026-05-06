@@ -29,8 +29,8 @@ public class TileManager
             var dest = new Rectangle<int>(
                 tile.x,
                 tile.y,
-                32,
-                32
+                16,
+                16
             );
 
             Game.Instance.textures.Render(

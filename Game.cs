@@ -13,11 +13,13 @@ public class Game
 {
     private static Game _instance;
 
+    public Camera2D mainCamera; 
+
     private Sdl _sdl;
     private IntPtr _window;
     private IntPtr _renderer;
     private Event _event;
-    private int windowWidth = 800,windowHeight = 700;
+    private int baseWidth = 400,baseHeight = 224;
     private bool _quit = false;
 
     //Managers
@@ -26,6 +28,11 @@ public class Game
     private EntityManager  _entities;
     private TileManager    _tiles;
     private TileSet        _tileset;
+    private ScreenManager  _screens;
+
+    //Screens
+    public GameScreen       gameScreen;
+    public TitleScreen     titleScreen;
 
     private Stopwatch _timer = new();
     private ulong _frames = 0;
@@ -36,7 +43,9 @@ public class Game
     public Sdl sdl => _sdl;
     public TextureManager textures => _textures;
     public IntPtr renderer => _renderer;
-
+    public EntityManager entities => _entities;
+    public TileManager tiles => _tiles;
+    public ScreenManager screens => _screens;
 
     public static Game Instance
     {
@@ -65,18 +74,15 @@ public class Game
         _entities = new EntityManager();
         _tileset = new TileSet("assets/Terrain/Terrain (16x16).png","assets/Terrain/tiles.txt");
         _tiles = new TileManager(_tileset);
+        _screens = new ScreenManager();
 
-        Entity p = EntityFactory.Create(EntityId.Player,300,200);
-        Entity apple = EntityFactory.Create(EntityId.Apple,100,200);
+        //Initialize Screens
+        gameScreen = new GameScreen();
+        titleScreen = new TitleScreen();
 
-        Entity wall = (Entity)new InvisibleCollider(0,400,500,10);
+        _screens.SetScreen(titleScreen);
 
-        _entities.Add(p);
-        _entities.Add(apple);
-        _entities.Add(wall);
-
-        _tiles.Add(new Tile(0,0,0));
-        _tiles.Add(new Tile(1,32,0));
+        mainCamera = new Camera2D();
     }
 
 
@@ -106,8 +112,8 @@ public class Game
             "Gravity Switcher",
             Sdl.WindowposUndefined,
             Sdl.WindowposUndefined,
-            windowWidth,
-            windowHeight,
+            baseWidth * 2,
+            baseHeight * 2,
             (uint)WindowFlags.Resizable
         );
 
@@ -122,6 +128,9 @@ public class Game
 
         _sdl.RenderSetVSync((Renderer*)_renderer, 1);
 
+        _sdl.SetHint(Sdl.HintRenderScaleQuality, "0"); // pixel perfect
+
+        _sdl.RenderSetLogicalSize((Renderer*)_renderer, baseWidth, baseHeight);
         _timer.Start();
 
     }
@@ -153,7 +162,7 @@ public class Game
 
         float dt = (float)elapsed.TotalSeconds;
 
-        _entities.Update(dt,_input);
+        _screens.Update(dt,_input);
         
      }
 
@@ -164,8 +173,7 @@ public class Game
         _sdl.SetRenderDrawColor(r, 255, 255, 255, 255);
         _sdl.RenderClear(r);
 
-        _tiles.Render(_renderer,_sdl);
-        _entities.Render(_renderer,_sdl);
+        _screens.Render(_renderer,_sdl);
 
         _sdl.RenderPresent(r);
         _frames++;

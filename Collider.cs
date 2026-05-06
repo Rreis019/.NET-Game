@@ -70,10 +70,15 @@ public class Collider
             if(type == ColliderType.Solid) {sdl.SetRenderDrawColor((Renderer*)renderer, 255,0,0,255);}
             else{sdl.SetRenderDrawColor((Renderer*)renderer, 0,255,0,255);}
 
+            Game g = Game.Instance;
+            Camera2D cam = g.mainCamera;
+
             var rect = new Rectangle<int>((int)Left(entity), (int)Top(entity), (int)width,(int)height);
 
+            var screenDest = cam.WorldToScreenRect(rect);
+
             // draw outline 
-            sdl.RenderDrawRect((Renderer*)renderer, ref rect);
+            sdl.RenderDrawRect((Renderer*)renderer, ref screenDest);
         }
     }
 }
