@@ -1,0 +1,266 @@
+using Silk.NET.SDL;
+using Silk.NET.Maths;
+
+namespace TheAdventure;
+
+public class LevelEditorScreen : IScreen
+{
+    private enum EditMode
+    {
+        Collider,
+        Entity,
+        Tile
+    }
+
+    private EditMode _mode = EditMode.Collider;
+
+    private Camera2D Camera => Game.Instance.mainCamera;
+
+    private Vector2D<float> _mouseWorld;
+
+    private int _indexEntity = 0;
+    private int _indexTile = 0;
+
+    // drag collider
+    private bool _isDragging;
+    private Vector2D<float> _dragStart;
+    private Vector2D<float> _dragEnd;
+
+    public void OnEnter() { }
+    public void OnExit() { }
+
+    public void Update(float dt, InputManager input)
+    {
+        HandleModeSwitch(input);
+        HandleCamera(input, dt);
+        HandleSwitchObject(input);
+
+        _mouseWorld = GetMouseWorld(input);
+
+        // ---------------- COLLIDER DRAG ----------------
+        if (_mode == EditMode.Collider)
+        {
+            if (input.IsMouseLeftClicked())
+            {
+                _isDragging = true;
+                _dragStart = SnapVec(_mouseWorld);
+            }
+
+            if (_isDragging){
+                _dragEnd = SnapVec(_mouseWorld);
+            }
+
+            if (input.IsMouseLeftReleased() && _isDragging)
+            {
+                _isDragging = false;
+                SpawnCollider(_dragStart, _dragEnd);
+            }
+        }
+        else
+        {
+            if (input.IsMouseLeftClicked())
+                Spawn(_mouseWorld);
+
+            if (input.IsMouseRightClicked())
+                Delete(_mouseWorld);
+        }
+
+
+        Game.Instance.entities.RemoveInactivesEntities();
+    }
+
+    public void Render(IntPtr renderer, Sdl sdl)
+    {
+        Game.Instance.tiles.Render(renderer, sdl);
+        Game.Instance.entities.Render(renderer, sdl);
+
+        DrawCursorPreview(renderer, sdl);
+    }
+
+    // ---------------- PREVIEW ----------------
+
+    private void DrawCursorPreview(IntPtr renderer, Sdl sdl)
+    {
+        switch (_mode)
+        {
+            case EditMode.Collider:
+                if (_isDragging)
+                    DrawRect(renderer, SnapVec(_dragStart), SnapVec(_dragEnd));
+                else
+                    DrawRect(renderer, _mouseWorld, _mouseWorld);
+                break;
+
+            case EditMode.Entity:
+                DrawEntityPreview(renderer, sdl, _mouseWorld);
+                break;
+
+            case EditMode.Tile:
+                DrawTile(renderer, SnapVec(_mouseWorld));
+                break;
+        }
+    }
+
+    // ---------------- CAMERA ----------------
+
+    private void HandleCamera(InputManager input, float dt)
+    {
+        float speed = 200f * dt;
+
+        if (input.IsKeyDown(KeyCode.W))
+            Camera.position.Y -= speed;
+
+        if (input.IsKeyDown(KeyCode.S))
+            Camera.position.Y += speed;
+
+        if (input.IsKeyDown(KeyCode.A))
+            Camera.position.X -= speed;
+
+        if (input.IsKeyDown(KeyCode.D))
+            Camera.position.X += speed;
+    }
+
+    // ---------------- MODE SWITCH ----------------
+
+    private void HandleModeSwitch(InputManager input)
+    {
+        if (input.IsKeyPressed(KeyCode.C))
+            _mode = EditMode.Collider;
+
+        if (input.IsKeyPressed(KeyCode.O))
+            _mode = EditMode.Entity;
+
+        if (input.IsKeyPressed(KeyCode.T))
+            _mode = EditMode.Tile;
+    }
+
+    // ---------------- SWITCH OBJECT ----------------
+
+    private void HandleSwitchObject(InputManager input)
+    {
+        if (_mode == EditMode.Entity)
+        {
+            if (input.IsKeyPressed(KeyCode.Q)) _indexEntity--;
+            if (input.IsKeyPressed(KeyCode.E)) _indexEntity++;
+
+            _indexEntity = Math.Clamp(_indexEntity, 0, (int)EntityId.MaxEntities - 1);
+        }
+
+        if (_mode == EditMode.Tile)
+        {
+            if (input.IsKeyPressed(KeyCode.Q)) _indexTile--;
+            if (input.IsKeyPressed(KeyCode.E)) _indexTile++;
+
+            _indexTile = Math.Clamp(_indexTile, 0, Game.Instance.tileset.tileCount - 1);
+        }
+    }
+
+    // ---------------- SPAWN ----------------
+
+    private void Spawn(Vector2D<float> pos)
+    {
+        switch (_mode)
+        {
+            case EditMode.Entity:
+                Game.Instance.entities.Add(
+                    EntityFactory.Create((EntityId)_indexEntity, pos.X, pos.Y)
+                );
+                break;
+
+            case EditMode.Tile:
+                Game.Instance.tiles.Add(
+                    new Tile(_indexTile, Snap(pos.X), Snap(pos.Y))
+                );
+                break;
+        }
+    }
+
+    private void SpawnCollider(Vector2D<float> a, Vector2D<float> b)
+    {
+        float x = MathF.Min(a.X, b.X);
+        float y = MathF.Min(a.Y, b.Y);
+
+        float w = MathF.Abs(a.X - b.X);
+        float h = MathF.Abs(a.Y - b.Y);
+
+        if (w < 4 || h < 4) return;
+
+        Game.Instance.entities.Add(
+            new InvisibleCollider(x, y, (int)w, (int)h)
+        );
+    }
+
+    // ---------------- DELETE ----------------
+
+    private void Delete(Vector2D<float> pos)
+    {
+        switch (_mode)
+        {
+            case EditMode.Collider:
+                Game.Instance.entities.RemoveAtPositionSameType<InvisibleCollider>(pos);
+                break;
+            case EditMode.Entity:
+                Game.Instance.entities.RemoveAtPosition(pos);
+                break;
+            case EditMode.Tile:
+                Game.Instance.tiles.RemoveAtPosition(SnapVec(pos));
+                break;        
+        }
+    }
+
+    // ---------------- MOUSE WORLD ----------------
+
+    private Vector2D<float> GetMouseWorld(InputManager input)
+    {
+        var cam = Game.Instance.mainCamera;
+        var mouse = input.GetMousePosition();
+
+        return new Vector2D<float>(
+            mouse.X / cam.zoom + cam.position.X,
+            mouse.Y / cam.zoom + cam.position.Y
+        );
+    }
+
+    // ---------------- DRAW RECT ----------------
+
+    private unsafe void DrawRect(IntPtr renderer, Vector2D<float> a, Vector2D<float> b)
+    {
+        var g = Game.Instance;
+        var sdl = g.sdl;
+
+        float x = MathF.Min(a.X, b.X);
+        float y = MathF.Min(a.Y, b.Y);
+        float w = MathF.Abs(a.X - b.X);
+        float h = MathF.Abs(a.Y - b.Y);
+
+        var r = (Renderer*)renderer;
+
+        var rect = new Rectangle<int>(
+            (int)x,
+            (int)y,
+            (int)w,
+            (int)h
+        );
+
+        sdl.SetRenderDrawColor(r, 255, 0, 0, 255);
+        sdl.RenderDrawRect(r, in rect);
+    }
+
+    private void DrawTile(IntPtr renderer, Vector2D<float> pos) { 
+        Game.Instance.tiles.RenderTile(_indexTile,Snap(pos.X),Snap(pos.Y));
+    }
+
+
+    private void DrawEntityPreview(IntPtr renderer, Sdl sdl, Vector2D<float> pos)
+    {
+        Entity e = EntityFactory.Create((EntityId)_indexEntity,pos.X,pos.Y);
+        e.Render(renderer,sdl);
+    }
+
+    // ---------------- UTIL ----------------
+
+    private Vector2D<float> SnapVec(Vector2D<float> v)
+        => new Vector2D<float>(Snap(v.X), Snap(v.Y));
+
+    private int Snap(float v)
+        => (int)(v / 16) * 16;
+}

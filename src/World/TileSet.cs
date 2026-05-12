@@ -10,6 +10,8 @@ public class TileSet
 
     public int textureId { get; private set; }
 
+    public int tileCount => _rects.Length;
+
     public TileSet(string spriteSheetPath, string tilePositionsPath)
     {
         var g = Game.Instance;

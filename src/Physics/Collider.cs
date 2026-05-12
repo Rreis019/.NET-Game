@@ -5,6 +5,7 @@ namespace TheAdventure;
 
 public enum ColliderType
 {
+    None,
     Solid,
     Trigger
 }
@@ -68,7 +69,8 @@ public class Collider
         unsafe
         {
             if(type == ColliderType.Solid) {sdl.SetRenderDrawColor((Renderer*)renderer, 255,0,0,255);}
-            else{sdl.SetRenderDrawColor((Renderer*)renderer, 0,255,0,255);}
+            else if(type == ColliderType.Trigger){sdl.SetRenderDrawColor((Renderer*)renderer, 0,255,0,255);}
+            else{return;}
 
             Game g = Game.Instance;
             Camera2D cam = g.mainCamera;

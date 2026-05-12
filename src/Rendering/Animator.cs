@@ -45,6 +45,6 @@ public class Animator
 
     public int GetTextureId()
     {
-        return _current?._textureId ?? 0; // ou expõe property (melhor)
+        return _current?.textureId ?? 0; // ou expõe property (melhor)
     }
 }

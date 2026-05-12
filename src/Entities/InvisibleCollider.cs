@@ -10,6 +10,7 @@ public class InvisibleCollider : Entity
     public InvisibleCollider(float x, float y,int width,int height)
         : base(x, y)
     {
+        id = 1337;
         _width = width;
         _height = height;
         isStatic   = true;

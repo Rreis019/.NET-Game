@@ -20,24 +20,37 @@ public class TileManager
         _tiles.Add(tile);
     }
 
+    public void RemoveAtPosition(Vector2D<float> pos)
+    {
+        _tiles.RemoveAll(t =>
+            pos.X >= t.x && pos.X < t.x + 16 &&
+            pos.Y >= t.y && pos.Y < t.y + 16
+        );
+    }
+
+    public void RenderTile(int index,float x,float y)
+    {
+        var src = _tileSet.GetSource(index);
+
+        var dest = new Rectangle<int>(
+            (int)x,
+            (int)y,
+            16,
+            16
+        );
+
+        Game.Instance.textures.Render(
+            _tileSet.textureId,
+            src,
+            dest
+        );
+    }
+
     public void Render(IntPtr renderer, Sdl sdl)
     {
         foreach (var tile in _tiles)
         {
-            var src = _tileSet.GetSource(tile.index);
-
-            var dest = new Rectangle<int>(
-                tile.x,
-                tile.y,
-                16,
-                16
-            );
-
-            Game.Instance.textures.Render(
-                _tileSet.textureId,
-                src,
-                dest
-            );
+            RenderTile(tile.index,tile.x,tile.y);
         }
     }
 }

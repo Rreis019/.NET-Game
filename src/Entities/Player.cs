@@ -25,6 +25,7 @@ public class Player : Entity
     private  int _idleTextureId;
     private  TextureData _idleTextureData;
     
+    
     private  int _fallTextureId;
     private  TextureData _fallTextureData;
  

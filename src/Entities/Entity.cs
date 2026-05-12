@@ -5,6 +5,8 @@ namespace TheAdventure;
 
 public abstract class Entity
 {
+    public short id;
+
     protected Vector2D<float> _position;
     protected Vector2D<float> _velocity;
 

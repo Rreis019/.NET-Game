@@ -4,27 +4,25 @@ using Silk.NET.Maths;
 
 namespace TheAdventure;
 
-public class Collectible : Entity
+public class Trap : Entity
 {
-    private int _score;
-    private int _width,_height;
+    protected Animator _animator;
+    protected Animation _idleAnimation;
+    protected int _width,_height;
     private int _textureId;
-    Animation _idleAnimation;
-    private Animator _animator;
 
-    public Collectible(float x, float y,int width,int height,int textureId, Animation idleAnimation,int score)
+    public Trap(float x, float y,int width,int height,int textureId, Animation defaultAnimation)
         : base(x, y)
     {
         _animator = new Animator();
 
         _textureId = textureId;
-        _idleAnimation = idleAnimation;
-        _score = score;
+        _idleAnimation = defaultAnimation;
 
         _width = width;
         _height = height;
 
-        _animator.Add("idle", _idleAnimation);
+        _animator.Add("idle", defaultAnimation);
         _animator.Play("idle");
 
         isStatic   = true;
@@ -40,10 +38,7 @@ public class Collectible : Entity
 
     public override void OnCollide(Entity other)
     {
-        //Destroy the object
-        this.isActive = false;
-
-        //TODO : Spawn Particle
+        //TODO : Restart the level
 
     }
 

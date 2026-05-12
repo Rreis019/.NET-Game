@@ -44,25 +44,43 @@ public class TextureManager {
         return _index++;
     }
 
-  public unsafe void Render(int textureId, Rectangle<int> src, Rectangle<int> dest, RendererFlip flipMode = RendererFlip.None)
-{
-    if (_texturePointers.TryGetValue(textureId, out var texture))
+    public unsafe void Render(int textureId, Rectangle<int> src, Rectangle<int> dest, RendererFlip flipMode = RendererFlip.None)
     {
-        Game g = Game.Instance;
-        Camera2D cam = g.mainCamera;
+        if (_texturePointers.TryGetValue(textureId, out var texture))
+        {
+            Game g = Game.Instance;
+            Camera2D cam = g.mainCamera;
 
-        var screenDest = cam.WorldToScreenRect(dest);
+            var screenDest = cam.WorldToScreenRect(dest);
 
-        g.sdl.RenderCopyEx(
-            (Renderer*)g.renderer,
-            (Texture*)texture,
-            in src,
-            in screenDest,
-            0.0,
-            null,
-            flipMode
-        );
+            g.sdl.RenderCopyEx(
+                (Renderer*)g.renderer,
+                (Texture*)texture,
+                in src,
+                in screenDest,
+                0.0,
+                null,
+                flipMode
+            );
+        }
     }
-}
+
+    public unsafe void RenderUI(int textureId, Rectangle<int> src, Rectangle<int> dest, RendererFlip flipMode = RendererFlip.None)
+    {
+        if (_texturePointers.TryGetValue(textureId, out var texture))
+        {
+            Game g = Game.Instance;
+
+            g.sdl.RenderCopyEx(
+                (Renderer*)g.renderer,
+                (Texture*)texture,
+                in src,
+                in dest,
+                0.0,
+                null,
+                flipMode
+            );
+        }
+    }
 
 }

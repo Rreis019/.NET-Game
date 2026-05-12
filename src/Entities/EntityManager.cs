@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Silk.NET.SDL;
+using Silk.NET.Maths;
 
 namespace TheAdventure;
 
@@ -16,6 +17,57 @@ public class EntityManager
     public void Destroy(Entity entity)
     {
         entity.isActive = false;
+    }
+
+    public void RemoveAtPositionSameType<T>(Vector2D<float> pos) where T : Entity
+    {
+        foreach (var e in _entities)
+        {
+            if (!e.isActive || e.collider == null)
+                continue;
+
+            // filtra por tipo
+            if (e is not T)
+                continue;
+
+            float left   = e.X;
+            float right  = e.X + e.collider.width;
+            float top    = e.Y;
+            float bottom = e.Y + e.collider.height;
+
+            if (pos.X >= left && pos.X <= right &&
+                pos.Y >= top  && pos.Y <= bottom)
+            {
+                e.isActive = false;
+                return;
+            }
+        }
+    }
+
+    public void RemoveAtPosition(Vector2D<float> pos)
+    {
+        foreach (var e in _entities)
+        {
+            if (!e.isActive || e.collider == null)
+                continue;
+
+            float left = e.X;
+            float right = e.X + e.collider.width;
+            float top = e.Y;
+            float bottom = e.Y + e.collider.height;
+
+            if (pos.X >= left && pos.X <= right &&
+                pos.Y >= top && pos.Y <= bottom)
+            {
+                e.isActive = false;
+                return;
+            }
+        }
+    }
+
+    public void RemoveInactivesEntities()
+    {
+        _entities.RemoveAll(e => !e.isActive);
     }
 
     public void Update(float dt, InputManager input)
@@ -36,7 +88,7 @@ public class EntityManager
                 MoveAndCollide(e, dt);
         }
 
-        _entities.RemoveAll(e => !e.isActive);
+        RemoveInactivesEntities();
     }
 
 

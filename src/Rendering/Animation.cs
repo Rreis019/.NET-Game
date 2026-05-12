@@ -15,7 +15,7 @@ public class Animation
     public bool loop => _loop;
     public int frameCount => _frames.Count;
 
-    public int _textureId;
+    public int textureId;
 
 
     public Animation(
@@ -28,7 +28,7 @@ public class Animation
         int startX = 0,
         int startY = 0)
     {
-        _textureId = spriteSheetId;
+        textureId = spriteSheetId;
         _frameTime = frameTime;
         _loop = loop;
 
@@ -48,7 +48,7 @@ public class Animation
     // ─────────────────────────────
     public Animation(int spriteSheetId,float frameTime, bool loop, List<Rectangle<int>> frames)
     {
-        _textureId = spriteSheetId;
+        textureId = spriteSheetId;
         _frameTime = frameTime;
         _loop = loop;
         _frames = frames;

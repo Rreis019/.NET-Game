@@ -20,9 +20,11 @@ public class InputManager
     // Mouse buttons
     private bool _mouseLeftDown;
     private bool _mouseLeftClicked;
+    private bool _mouseLeftReleased;
 
     private bool _mouseRightDown;
     private bool _mouseRightClicked;
+    private bool _mouseRightReleased;
 
     public InputManager(Sdl sdl)
     {
@@ -37,111 +39,97 @@ public class InputManager
         _previousKeyboardState = new byte[(int)KeyCode.Count];
     }
 
-public void ProcessEvents()
-{
-    _mouseLeftClicked = false;
-    _mouseRightClicked = false;
-
-    // 1. SAVE previous state FIRST
-    for (int i = 0; i < (int)KeyCode.Count; i++)
+    public void ProcessEvents()
     {
-        _previousKeyboardState[i] = _keyboardState[i];
-    }
+        // reset frame states
+        _mouseLeftClicked = false;
+        _mouseRightClicked = false;
+        _mouseLeftReleased = false;
+        _mouseRightReleased = false;
 
-    unsafe
-    {
-        while (_sdl.PollEvent(ref _event) != 0)
+        // keyboard previous state
+        for (int i = 0; i < (int)KeyCode.Count; i++)
+            _previousKeyboardState[i] = _keyboardState[i];
+
+        unsafe
         {
-            switch ((EventType)_event.Type)
+            while (_sdl.PollEvent(ref _event) != 0)
             {
-                case EventType.Quit:
-                    Environment.Exit(0);
-                    break;
-
-                case EventType.Mousemotion:
-                    _mouseX = _event.Motion.X;
-                    _mouseY = _event.Motion.Y;
-                    break;
-
-                case EventType.Mousebuttondown:
+                switch ((EventType)_event.Type)
                 {
-                    byte button = _event.Button.Button;
+                    case EventType.Quit:
+                        Environment.Exit(0);
+                        break;
 
-                    if (button == 1)
+                    case EventType.Mousemotion:
+                        _mouseX = _event.Motion.X;
+                        _mouseY = _event.Motion.Y;
+                        break;
+
+                    case EventType.Mousebuttondown:
                     {
-                        _mouseLeftDown = true;
-                        _mouseLeftClicked = true;
+                        byte button = _event.Button.Button;
+
+                        if (button == 1)
+                        {
+                            _mouseLeftDown = true;
+                            _mouseLeftClicked = true;
+                        }
+
+                        if (button == 3)
+                        {
+                            _mouseRightDown = true;
+                            _mouseRightClicked = true;
+                        }
+
+                        break;
                     }
 
-                    if (button == 3)
+                    case EventType.Mousebuttonup:
                     {
-                        _mouseRightDown = true;
-                        _mouseRightClicked = true;
+                        byte button = _event.Button.Button;
+
+                        if (button == 1)
+                        {
+                            _mouseLeftDown = false;
+                            _mouseLeftReleased = true;
+                        }
+
+                        if (button == 3)
+                        {
+                            _mouseRightDown = false;
+                            _mouseRightReleased = true;
+                        }
+
+                        break;
                     }
-
-                    break;
-                }
-
-                case EventType.Mousebuttonup:
-                {
-                    byte button = _event.Button.Button;
-
-                    if (button == 1)
-                        _mouseLeftDown = false;
-
-                    if (button == 3)
-                        _mouseRightDown = false;
-
-                    break;
-                }
-
-                case EventType.Keydown:
-                {
-                    // optional: force update if needed
-                    break;
-                }
-
-                case EventType.Keyup:
-                {
-                    break;
                 }
             }
-        }
 
-        // 2. Update current keyboard state
-        for (int i = 0; i < (int)KeyCode.Count; i++)
-        {
-            _keyboardState[i] = _nativeKeyboardState[i];
+            for (int i = 0; i < (int)KeyCode.Count; i++)
+                _keyboardState[i] = _nativeKeyboardState[i];
         }
     }
-}
+
     // ---------------- KEYBOARD ----------------
 
     public bool IsKeyDown(KeyCode key)
-    {
-        return _keyboardState[(int)key] != 0;
-    }
+        => _keyboardState[(int)key] != 0;
 
     public bool IsKeyPressed(KeyCode key)
-    {
-        int k = (int)key;
+        => _keyboardState[(int)key] != 0 &&
+           _previousKeyboardState[(int)key] == 0;
 
-        return _keyboardState[k] != 0 &&
-               _previousKeyboardState[k] == 0;
-    }
-
-    // ---------------- MOUSE POSITION ----------------
+    // ---------------- MOUSE ----------------
 
     public (int X, int Y) GetMousePosition()
-    {
-        return (_mouseX, _mouseY);
-    }
-
-    // ---------------- MOUSE BUTTONS ----------------
+        => (_mouseX, _mouseY);
 
     public bool IsMouseLeftDown() => _mouseLeftDown;
     public bool IsMouseLeftClicked() => _mouseLeftClicked;
+    public bool IsMouseLeftReleased() => _mouseLeftReleased;
 
     public bool IsMouseRightDown() => _mouseRightDown;
     public bool IsMouseRightClicked() => _mouseRightClicked;
+    public bool IsMouseRightReleased() => _mouseRightReleased;
 }

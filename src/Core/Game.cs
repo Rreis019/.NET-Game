@@ -31,8 +31,13 @@ public class Game
     private ScreenManager  _screens;
 
     //Screens
-    public GameScreen     gameScreen;
-    public TitleScreen     titleScreen;
+    public GameScreen            gameScreen;
+    public TitleScreen           titleScreen;
+    public LevelEditorScreen     levelEditor;
+
+    //Default Font
+    public TextureFont  defaultBlackFont;
+    public TextureFont  defaultWhiteFont;
 
     private Stopwatch _timer = new();
     private ulong _frames = 0;
@@ -45,6 +50,8 @@ public class Game
     public IntPtr renderer => _renderer;
     public EntityManager entities => _entities;
     public TileManager tiles => _tiles;
+
+    public TileSet tileset => _tileset;
     public ScreenManager screens => _screens;
 
     public static Game Instance
@@ -76,11 +83,29 @@ public class Game
         _tiles = new TileManager(_tileset);
         _screens = new ScreenManager();
 
+        //Initialize Fonts
+        defaultBlackFont = new TextureFont(
+            "assets/Menu/Text/Text (Black) (8x10).png",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:?![]+-",
+            8,
+            10
+        );
+
+        defaultWhiteFont = new TextureFont(
+            "assets/Menu/Text/Text (White) (8x10).png",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,:?![]+-",
+            8,
+            10
+        );
+
+
         //Initialize Screens
         gameScreen =  new GameScreen();
         titleScreen = new TitleScreen();
+        levelEditor = new LevelEditorScreen();
 
         _screens.SetScreen(titleScreen);
+
 
         mainCamera = new Camera2D();
     }
